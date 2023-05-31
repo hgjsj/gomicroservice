@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "./pb";
+
+// The String service definition.
+service StringSvc {
+  // Turn string to uppercase.
+  rpc Uppercase (UppercaseRequest) returns (UppercaseResponse) {}
+
+  // Get lenth of string.
+  rpc Count (CountRequest) returns (CountResponse) {}
+}
+
+// The uppercase request contains a parameter.
+message UppercaseRequest {
+  string S = 1;
+}
+
+// The uppercase response contains two parameters.
+message UppercaseResponse {
+  string V = 1;
+  string Err = 2;
+}
+
+// The count request contains a parameter.
+message CountRequest {
+    string S = 1;
+}
+
+// The count response contains a parameter.
+message CountResponse {
+  int32 V = 1;
+}
