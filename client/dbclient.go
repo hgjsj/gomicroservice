@@ -9,10 +9,11 @@ import (
 
 var db *gorm.DB
 
+func init() {
+	InitSQLit("cloud.db")
+}
+
 func DBMigrationAll() {
-	if db == nil {
-		panic("Connect database before migration")
-	}
 	//migrate DB schema as need
 	db.AutoMigrate(&model.Disk{}, &model.VirtualMachine{})
 }
@@ -23,4 +24,8 @@ func InitSQLit(path string) {
 		panic("failed to connect database")
 	}
 	db = sqlite
+}
+
+func CreateItem(c model.CRUD) interface{} {
+	return c.Create(db)
 }

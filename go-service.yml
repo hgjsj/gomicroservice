@@ -3,3 +3,4 @@ gatewayport: 8090
 #consulport: 8500
 httpport: 8080
 grpcport: 8070
+cloudport: 8060

@@ -56,7 +56,6 @@ func LaunchHttpSever(port int, proxy string, consulport int) {
 		transport.EncodeResponse,
 	)
 	go func() {
-
 		http.Handle("/uppercase", uppercaseHandler)
 		http.Handle("/count", countHandler)
 		http.Handle("/metrics", promhttp.Handler())

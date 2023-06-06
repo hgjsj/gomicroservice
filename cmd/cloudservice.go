@@ -12,32 +12,27 @@ import (
 	"go-microservice/server"
 )
 
-var httpPort int
-var consulPort int
-var proxy string
+var cloudPort int
 
 // httpserviceCmd represents the httpservice command
-var httpserviceCmd = &cobra.Command{
-	Use:   "httpservice",
-	Short: "Create service with HTTP",
-	Long:  `Create service with HTTP`,
+var cloudserviceCmd = &cobra.Command{
+	Use:   "cloudservice",
+	Short: "Create cloud service with HTTP",
+	Long:  `Create cloud service with HTTP`,
 	Run: func(cmd *cobra.Command, args []string) {
-		httpPort := viper.GetInt("httpport")
+		httpPort := viper.GetInt("cloudport")
 		consulPort := viper.GetInt("consulport")
 
-		proxyFlay := cmd.Flag("proxy")
-		proxy = proxyFlay.Value.String()
-
-		server.LaunchHttpSever(httpPort, proxy, consulPort)
+		server.LauchCloudServer(httpPort)
 		if consulPort != 0 {
 			consulConfig := api.DefaultConfig()
 			consulConfig.Address = fmt.Sprintf(":%d", consulPort)
 			consulClient, _ := api.NewClient(consulConfig)
 			client := consul.NewClient(consulClient)
 			client.Register(&api.AgentServiceRegistration{
-				ID:      fmt.Sprintf("stringservice:%d", consulPort),
-				Name:    "stringservice",
-				Tags:    append([]string{}, "stringservice"),
+				ID:      fmt.Sprintf("cloudservice:%d", consulPort),
+				Name:    "cloudservice",
+				Tags:    append([]string{}, "cloudservice"),
 				Address: "127.0.0.1",
 				Port:    consulPort})
 		}
@@ -45,7 +40,7 @@ var httpserviceCmd = &cobra.Command{
 }
 
 func init() {
-	serviceCmd.AddCommand(httpserviceCmd)
+	serviceCmd.AddCommand(cloudserviceCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -56,11 +51,8 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// httpserviceCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	httpserviceCmd.Flags().IntVar(&httpPort, "httpport", 8080, "Service HTTP port")
-	httpserviceCmd.Flags().StringVar(&proxy, "proxy", "", "Proxy list splite with comma as 8010,8020,8030")
-	httpserviceCmd.Flags().IntVar(&consulPort, "consulport", 8500, "Consul port")
-
-	viper.BindPFlag("httpport", httpserviceCmd.Flags().Lookup("httpport"))
-	viper.BindPFlag("proxy", httpserviceCmd.Flags().Lookup("proxy"))
-	viper.BindPFlag("consulport", httpserviceCmd.Flags().Lookup("consulport"))
+	cloudserviceCmd.Flags().IntVar(&cloudPort, "cloudport", 8060, "Cloud Service HTTP port")
+	cloudserviceCmd.Flags().IntVar(&consulPort, "consulport", 8500, "Consul port")
+	viper.BindPFlag("cloudport", cloudserviceCmd.Flags().Lookup("httpport"))
+	viper.BindPFlag("consulport", cloudserviceCmd.Flags().Lookup("consulport"))
 }
