@@ -34,6 +34,10 @@ type Disk struct {
 	VirtualMachineID uint   `json:"vm,omitempty"`
 }
 
+type DiskList struct {
+	Disks []Disk `json:"disk"`
+}
+
 type Tabler interface {
 	TableName() string
 }
@@ -48,6 +52,10 @@ func (Disk) TableName() string {
 
 type CRUD interface {
 	Create(*gorm.DB) CRUD
+	Get(*gorm.DB) CRUD
+	List(*gorm.DB) interface{}
+	Patch(*gorm.DB, CRUD) CRUD
+	Delete(*gorm.DB) CRUD
 }
 
 func (vm VirtualMachine) Create(db *gorm.DB) CRUD {
@@ -60,6 +68,88 @@ func (vm VirtualMachine) Create(db *gorm.DB) CRUD {
 
 func (d Disk) Create(db *gorm.DB) CRUD {
 	res := db.Create(&d)
+	if res.Error != nil {
+
+	}
+	return d
+}
+
+func (vm VirtualMachine) Get(db *gorm.DB) CRUD {
+	disks := []Disk{}
+	res := db.First(&vm)
+	if res.Error != nil {
+		return nil
+	}
+
+	if err := db.Model(&vm).Association("Disks").Find(&disks); err == nil {
+		vm.Disks = disks
+	}
+
+	return vm
+}
+
+func (d Disk) Get(db *gorm.DB) CRUD {
+	res := db.First(&d)
+	if res.Error != nil {
+		return nil
+	}
+	return d
+}
+
+func (vm VirtualMachine) List(db *gorm.DB) interface{} {
+	var vms []VirtualMachine
+	res := db.Find(&vms)
+	if res.Error == nil {
+		for index, value := range vms {
+			disks := []Disk{}
+			res := db.Model(&value).Association("Disks").Find(&disks)
+			if res == nil {
+				vms[index].Disks = disks
+			}
+		}
+		return vms
+	}
+	return nil
+}
+
+func (d Disk) List(db *gorm.DB) interface{} {
+	var disks []Disk
+	res := db.Find(&disks)
+	if res.Error == nil {
+		return disks
+	}
+	return nil
+
+}
+
+func (d Disk) Patch(db *gorm.DB, u CRUD) CRUD {
+	res := db.Find(&d)
+	if res.Error != nil {
+		return nil
+	}
+	db.Model(&d).Updates(u)
+	return d
+}
+
+func (vm VirtualMachine) Patch(db *gorm.DB, u CRUD) CRUD {
+	res := db.Find(&vm)
+	if res.Error != nil {
+		return nil
+	}
+	db.Model(&vm).Updates(u)
+	return vm
+}
+
+func (vm VirtualMachine) Delete(db *gorm.DB) CRUD {
+	res := db.Delete(&vm)
+	if res.Error != nil {
+
+	}
+	return vm
+}
+
+func (d Disk) Delete(db *gorm.DB) CRUD {
+	res := db.Delete(&d)
 	if res.Error != nil {
 
 	}

@@ -13,22 +13,39 @@ func LauchCloudServer(port int) {
 	vmHandler := httptransport.NewServer(
 		endpoint.MakeVMPostEndpoint(),
 		transport.DecodeVMRequest,
-		transport.EncodeCloudResponse,
+		httptransport.EncodeJSONResponse,
 	)
 	diskHandler := httptransport.NewServer(
 		endpoint.MakeDiskEndpoint(),
 		transport.DecodeDiskRequest,
-		transport.EncodeCloudResponse,
+		httptransport.EncodeJSONResponse,
 	)
 
+	vmListHandler := httptransport.NewServer(
+		endpoint.MakeListVMEndpoint(),
+		httptransport.NopRequestDecoder,
+		httptransport.EncodeJSONResponse,
+	)
+
+	diskListHandler := httptransport.NewServer(
+		endpoint.MakeListDiskEndpoint(),
+		httptransport.NopRequestDecoder,
+		httptransport.EncodeJSONResponse,
+	)
 	go func() {
 		router := gin.Default()
 
 		//Proceed VM router
 		router.POST("/vm", gin.WrapH(vmHandler))
 		router.POST("/disk", gin.WrapH(diskHandler))
-		// router.GET("/vm")
-		// router.GET("/vm/[id]")
+		router.GET("/disk/:id", endpoint.MakeDiskGetEndpoint())
+		router.GET("/vm/:id", endpoint.MakeVMGetEndpoint())
+		router.GET("/vm", gin.WrapH(vmListHandler))
+		router.GET("/disk", gin.WrapH(diskListHandler))
+		router.PATCH("/disk/:id", endpoint.MakePatchDiskEndpoint())
+		router.PATCH("/vm/:id", endpoint.MakePatchVMEndpoint())
+		router.DELETE("/disk/:id", endpoint.MakeDeleteDiskEndpoint())
+		router.DELETE("/vm/:id", endpoint.MakeDeleteVMEndpoint())
 		listen := fmt.Sprintf(":%d", port)
 		router.Run(listen)
 	}()

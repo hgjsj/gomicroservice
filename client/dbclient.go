@@ -29,3 +29,19 @@ func InitSQLit(path string) {
 func CreateItem(c model.CRUD) interface{} {
 	return c.Create(db)
 }
+
+func GetItem(c model.CRUD) interface{} {
+	return c.Get(db)
+}
+
+func ListItems(c model.CRUD) interface{} {
+	return c.List(db)
+}
+
+func PatchItem(c model.CRUD, u model.CRUD) interface{} {
+	return c.Patch(db, u)
+}
+
+func DeleteItem(c model.CRUD) interface{} {
+	return c.Delete(db)
+}
