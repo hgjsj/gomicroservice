@@ -34,8 +34,8 @@ func GetItem(c model.CRUD) interface{} {
 	return c.Get(db)
 }
 
-func ListItems(c model.CRUD) interface{} {
-	return c.List(db)
+func ListItems(c model.CRUD, filters map[string][]string) interface{} {
+	return c.List(db, filters)
 }
 
 func PatchItem(c model.CRUD, u model.CRUD) interface{} {

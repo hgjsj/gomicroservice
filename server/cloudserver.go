@@ -21,17 +21,6 @@ func LauchCloudServer(port int) {
 		httptransport.EncodeJSONResponse,
 	)
 
-	vmListHandler := httptransport.NewServer(
-		endpoint.MakeListVMEndpoint(),
-		httptransport.NopRequestDecoder,
-		httptransport.EncodeJSONResponse,
-	)
-
-	diskListHandler := httptransport.NewServer(
-		endpoint.MakeListDiskEndpoint(),
-		httptransport.NopRequestDecoder,
-		httptransport.EncodeJSONResponse,
-	)
 	go func() {
 		router := gin.Default()
 
@@ -40,8 +29,8 @@ func LauchCloudServer(port int) {
 		router.POST("/disk", gin.WrapH(diskHandler))
 		router.GET("/disk/:id", endpoint.MakeDiskGetEndpoint())
 		router.GET("/vm/:id", endpoint.MakeVMGetEndpoint())
-		router.GET("/vm", gin.WrapH(vmListHandler))
-		router.GET("/disk", gin.WrapH(diskListHandler))
+		router.GET("/vm", endpoint.MakeListVMEndpoint())
+		router.GET("/disk", endpoint.MakeListDiskEndpoint())
 		router.PATCH("/disk/:id", endpoint.MakePatchDiskEndpoint())
 		router.PATCH("/vm/:id", endpoint.MakePatchVMEndpoint())
 		router.DELETE("/disk/:id", endpoint.MakeDeleteDiskEndpoint())

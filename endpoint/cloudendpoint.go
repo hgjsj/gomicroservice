@@ -48,17 +48,17 @@ func MakeDiskGetEndpoint() gin.HandlerFunc {
 	}
 }
 
-func MakeListVMEndpoint() endpoint.Endpoint {
-	return func(_ context.Context, request interface{}) (interface{}, error) {
-		re_vm := client.ListItems(model.VirtualMachine{})
-		return re_vm, nil
+func MakeListVMEndpoint() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		vms := client.ListItems(model.VirtualMachine{}, c.Request.URL.Query())
+		c.JSON(200, vms)
 	}
 }
 
-func MakeListDiskEndpoint() endpoint.Endpoint {
-	return func(_ context.Context, request interface{}) (interface{}, error) {
-		re_disk := client.ListItems(model.Disk{})
-		return re_disk, nil
+func MakeListDiskEndpoint() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		disks := client.ListItems(model.Disk{}, c.Request.URL.Query())
+		c.JSON(200, disks)
 	}
 }
 

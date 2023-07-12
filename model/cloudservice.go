@@ -53,7 +53,7 @@ func (Disk) TableName() string {
 type CRUD interface {
 	Create(*gorm.DB) CRUD
 	Get(*gorm.DB) CRUD
-	List(*gorm.DB) interface{}
+	List(*gorm.DB, map[string][]string) interface{}
 	Patch(*gorm.DB, CRUD) CRUD
 	Delete(*gorm.DB) CRUD
 }
@@ -96,9 +96,15 @@ func (d Disk) Get(db *gorm.DB) CRUD {
 	return d
 }
 
-func (vm VirtualMachine) List(db *gorm.DB) interface{} {
+func (vm VirtualMachine) List(db *gorm.DB, filters map[string][]string) interface{} {
 	var vms []VirtualMachine
-	res := db.Find(&vms)
+	query := make(map[string]interface{})
+
+	for k, v := range filters {
+		query[k] = v[0]
+	}
+
+	res := db.Where(query).Find(&vms)
 	if res.Error == nil {
 		for index, value := range vms {
 			disks := []Disk{}
@@ -112,14 +118,30 @@ func (vm VirtualMachine) List(db *gorm.DB) interface{} {
 	return nil
 }
 
-func (d Disk) List(db *gorm.DB) interface{} {
+func (d Disk) List(db *gorm.DB, filters map[string][]string) interface{} {
 	var disks []Disk
-	res := db.Find(&disks)
-	if res.Error == nil {
-		return disks
-	}
-	return nil
+	query := make(map[string]interface{})
 
+	for k, v := range filters {
+		if k != "vmname" {
+			query[k] = v[0]
+		}
+
+	}
+
+	if val, ok := filters["vmname"]; ok {
+		var vmids []int
+		var vms []VirtualMachine
+		db.Where(map[string]string{"name": val[0]}).Find(&vms)
+		for _, v := range vms {
+			vmids = append(vmids, int(v.ID))
+		}
+		db.Where(query).Where("virtual_machine_id IN ?", vmids).Find(&disks)
+	} else {
+		db.Where(query).Find(&disks)
+	}
+
+	return disks
 }
 
 func (d Disk) Patch(db *gorm.DB, u CRUD) CRUD {
