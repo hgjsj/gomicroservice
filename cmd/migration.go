@@ -4,7 +4,7 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"go-microservice/client"
+	"go-microservice/service"
 
 	"github.com/spf13/cobra"
 )
@@ -15,8 +15,8 @@ var migrationCmd = &cobra.Command{
 	Short: "Migrate database schema",
 	Long:  `Migrate database schema`,
 	Run: func(cmd *cobra.Command, args []string) {
-		client.InitSQLit("cloud.db")
-		client.DBMigrationAll()
+		service.InitSQLit("cloud.db")
+		service.DBMigrationAll()
 	},
 }
 

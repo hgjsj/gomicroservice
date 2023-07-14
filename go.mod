@@ -9,6 +9,8 @@ require (
 	github.com/go-kit/log v0.2.1
 	github.com/go-playground/validator/v10 v10.14.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/hashicorp/consul/api v1.20.0
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect

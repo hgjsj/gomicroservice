@@ -2,27 +2,27 @@ package endpoint
 
 import (
 	"context"
-	"go-microservice/client"
-	"go-microservice/model"
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/kit/endpoint"
+	"go-microservice/model"
+	"go-microservice/service"
+	"net/http"
+	"strconv"
 )
 
 func MakeVMPostEndpoint() endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		vm := request.(model.VirtualMachine)
-		re_vm := client.CreateItem(vm)
-		return re_vm, nil
+		error := service.Create(&vm)
+		return vm, error
 	}
 }
 
 func MakeDiskEndpoint() endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		disk := request.(model.Disk)
-		re_disk := client.CreateItem(disk)
-		return re_disk, nil
+		error := service.Create(&disk)
+		return disk, error
 	}
 }
 
@@ -32,8 +32,11 @@ func MakeVMGetEndpoint() gin.HandlerFunc {
 		id := c.Param("id")
 		i, _ := strconv.ParseUint(id, 10, 32)
 		vm.ID = uint(i)
-		re_vm := client.GetItem(vm)
-		c.JSON(200, re_vm)
+		if err := service.Get(&vm); err == nil {
+			c.JSON(http.StatusOK, vm)
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
 	}
 }
 
@@ -43,22 +46,36 @@ func MakeDiskGetEndpoint() gin.HandlerFunc {
 		id := c.Param("id")
 		i, _ := strconv.ParseUint(id, 10, 32)
 		disk.ID = uint(i)
-		re_disk := client.GetItem(disk)
-		c.JSON(200, re_disk)
+		if err := service.Get(&disk); err == nil {
+			c.JSON(http.StatusOK, disk)
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
 	}
 }
 
 func MakeListVMEndpoint() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		vms := client.ListItems(model.VirtualMachine{}, c.Request.URL.Query())
-		c.JSON(200, vms)
+		vms, err := service.List(&model.VirtualMachine{}, c.Request.URL.Query())
+		if err == nil {
+			c.JSON(http.StatusOK, vms)
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
 	}
 }
 
 func MakeListDiskEndpoint() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		disks := client.ListItems(model.Disk{}, c.Request.URL.Query())
-		c.JSON(200, disks)
+		disks, err := service.List(&model.Disk{}, c.Request.URL.Query())
+		if err == nil {
+			c.JSON(http.StatusOK, disks)
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
 	}
 }
 
@@ -70,11 +87,17 @@ func MakePatchDiskEndpoint() gin.HandlerFunc {
 		i, _ := strconv.ParseUint(id, 10, 32)
 		disk.ID = uint(i)
 
-		if c.BindJSON(&u) == nil {
-			c.JSON(200, client.PatchItem(disk, u))
-		}
+		if err := c.BindJSON(&u); err == nil {
+			if err = service.Patch(&disk, u); err == nil {
+				c.JSON(http.StatusOK, disk)
 
-		c.JSON(304, nil)
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			}
+
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
 	}
 }
 
@@ -85,11 +108,17 @@ func MakePatchVMEndpoint() gin.HandlerFunc {
 		i, _ := strconv.ParseUint(id, 10, 32)
 		vm.ID = uint(i)
 
-		if c.BindJSON(&u) == nil {
-			c.JSON(200, client.PatchItem(vm, u))
-		}
+		if err := c.BindJSON(&u); err == nil {
+			if err = service.Patch(&vm, u); err == nil {
+				c.JSON(http.StatusOK, vm)
 
-		c.JSON(304, nil)
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			}
+
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
 	}
 }
 
@@ -99,7 +128,11 @@ func MakeDeleteDiskEndpoint() gin.HandlerFunc {
 		id := c.Param("id")
 		i, _ := strconv.ParseUint(id, 10, 32)
 		disk.ID = uint(i)
-		c.JSON(200, client.DeleteItem(disk))
+		if err := service.Delete(&disk); err == nil {
+			c.JSON(http.StatusOK, disk)
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
 	}
 }
 
@@ -109,6 +142,37 @@ func MakeDeleteVMEndpoint() gin.HandlerFunc {
 		id := c.Param("id")
 		i, _ := strconv.ParseUint(id, 10, 32)
 		vm.ID = uint(i)
-		c.JSON(200, client.DeleteItem(vm))
+		if err := service.Delete(&vm); err == nil {
+			c.JSON(http.StatusOK, vm)
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
+	}
+}
+
+func MakeTokenEndpoint() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if token, err := service.NewToken(); err == nil {
+			c.Header("X-Subject-Token", token)
+			c.JSON(http.StatusOK, nil)
+		} else {
+			c.JSON(http.StatusInternalServerError, nil)
+		}
+
+	}
+}
+
+func MakeValidateTokenEndpoint() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.GetHeader("X-Cloud-Token")
+		if token == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": "Need token in header"})
+		} else {
+			if isValid, err := service.ValidateToken(token); !isValid {
+				c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+			}
+		}
+
 	}
 }
