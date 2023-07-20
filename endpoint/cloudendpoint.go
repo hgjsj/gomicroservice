@@ -1,28 +1,43 @@
 package endpoint
 
 import (
-	"context"
 	"github.com/gin-gonic/gin"
-	"github.com/go-kit/kit/endpoint"
 	"go-microservice/model"
 	"go-microservice/service"
 	"net/http"
+	"regexp"
 	"strconv"
 )
 
-func MakeVMPostEndpoint() endpoint.Endpoint {
-	return func(_ context.Context, request interface{}) (interface{}, error) {
-		vm := request.(model.VirtualMachine)
-		error := service.Create(&vm)
-		return vm, error
+func MakeVMPostEndpoint() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		vm := model.VirtualMachine{}
+		gin.Logger()
+		if err := c.BindJSON(&vm); err == nil {
+			if err = service.Create(&vm); err == nil {
+				c.JSON(http.StatusOK, vm)
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			}
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
 	}
 }
 
-func MakeDiskEndpoint() endpoint.Endpoint {
-	return func(_ context.Context, request interface{}) (interface{}, error) {
-		disk := request.(model.Disk)
-		error := service.Create(&disk)
-		return disk, error
+func MakeDiskPostEndpoint() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		disk := model.Disk{}
+
+		if err := c.BindJSON(&disk); err == nil {
+			if err = service.Create(&disk); err == nil {
+				c.JSON(http.StatusOK, disk)
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			}
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
 	}
 }
 
@@ -165,14 +180,19 @@ func MakeTokenEndpoint() gin.HandlerFunc {
 
 func MakeValidateTokenEndpoint() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := c.GetHeader("X-Cloud-Token")
+		token := c.GetHeader("Authorization")
 		if token == "" {
 			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": "Need token in header"})
 		} else {
-			if isValid, err := service.ValidateToken(token); !isValid {
+			reg, _ := regexp.Compile("Bearer\\s+(.*?)$")
+			jwt := reg.FindStringSubmatch(token)
+			if len(jwt) == 0 {
+				c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": "incorrectly formatted authorization header"})
+			}
+
+			if isValid, err := service.ValidateToken(jwt[len(jwt)-1]); !isValid {
 				c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 			}
 		}
-
 	}
 }

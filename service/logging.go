@@ -1,9 +1,8 @@
 package service
 
 import (
-	"time"
-
 	"github.com/go-kit/log"
+	"time"
 )
 
 type LoggingMiddleware struct {

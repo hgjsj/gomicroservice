@@ -2,31 +2,18 @@ package server
 
 import (
 	"fmt"
-	"go-microservice/endpoint"
-	"go-microservice/transport"
-
 	"github.com/gin-gonic/gin"
-	httptransport "github.com/go-kit/kit/transport/http"
+	"go-microservice/endpoint"
 )
 
 func LauchCloudServer(port int) {
-	vmHandler := httptransport.NewServer(
-		endpoint.MakeVMPostEndpoint(),
-		transport.DecodeVMRequest,
-		httptransport.EncodeJSONResponse,
-	)
-	diskHandler := httptransport.NewServer(
-		endpoint.MakeDiskEndpoint(),
-		transport.DecodeDiskRequest,
-		httptransport.EncodeJSONResponse,
-	)
-
+	router := gin.Default()
 	go func() {
-		router := gin.Default()
+
 		//Proceed VM router
 		router.POST("/token", endpoint.MakeTokenEndpoint())
-		router.POST("/vm", endpoint.MakeValidateTokenEndpoint(), gin.WrapH(vmHandler))
-		router.POST("/disk", endpoint.MakeValidateTokenEndpoint(), gin.WrapH(diskHandler))
+		router.POST("/vm", endpoint.MakeValidateTokenEndpoint(), endpoint.MakeVMPostEndpoint())
+		router.POST("/disk", endpoint.MakeValidateTokenEndpoint(), endpoint.MakeDiskPostEndpoint())
 		router.GET("/disk/:id", endpoint.MakeValidateTokenEndpoint(), endpoint.MakeDiskGetEndpoint())
 		router.GET("/vm/:id", endpoint.MakeValidateTokenEndpoint(), endpoint.MakeVMGetEndpoint())
 		router.GET("/vm", endpoint.MakeValidateTokenEndpoint(), endpoint.MakeListVMEndpoint())
