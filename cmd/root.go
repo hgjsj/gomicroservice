@@ -30,7 +30,7 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
-	if os.Args[1] == "service" {
+	if len(os.Args) > 1 && os.Args[1] == "service" {
 		errs := make(chan error)
 		c := make(chan os.Signal)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
@@ -66,3 +66,4 @@ func initialize() {
 		viper.SetDefault("consulport", 8500)
 	}
 }
+
