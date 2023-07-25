@@ -4,3 +4,4 @@ gatewayport: 8090
 httpport: 8080
 grpcport: 8070
 cloudport: 8060
+#dbpath: /var/go-microservice/data

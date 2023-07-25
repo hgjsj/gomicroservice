@@ -37,7 +37,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// migrationCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	migrationCmd.Flags().StringVar(&dbpath, "dbpath", "", "path of db data")
+	migrationCmd.Flags().StringVar(&dbpath, "dbpath", ".", "path of db data")
 	viper.BindPFlag("dbpath", migrationCmd.Flags().Lookup("dbpath"))
 
 }
