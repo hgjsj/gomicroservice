@@ -5,9 +5,13 @@ package cmd
 
 import (
 	"go-microservice/service"
+	"path"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
+
+var dbpath string
 
 // migrationCmd represents the migration command
 var migrationCmd = &cobra.Command{
@@ -15,7 +19,8 @@ var migrationCmd = &cobra.Command{
 	Short: "Migrate database schema",
 	Long:  `Migrate database schema`,
 	Run: func(cmd *cobra.Command, args []string) {
-		service.InitSQLit("cloud.db")
+		dbpath = viper.GetString("dbpath")
+		service.InitSQLit(path.Join(dbpath, "cloud.db"))
 		service.DBMigrationAll()
 	},
 }
@@ -32,4 +37,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// migrationCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	migrationCmd.Flags().StringVar(&dbpath, "dbpath", "", "path of db data")
+	viper.BindPFlag("dbpath", migrationCmd.Flags().Lookup("dbpath"))
+
 }

@@ -10,6 +10,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go-microservice/server"
+	"go-microservice/service"
+	"os"
+	"path"
 )
 
 var cloudPort int
@@ -22,7 +25,13 @@ var cloudserviceCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		httpPort := viper.GetInt("cloudport")
 		consulPort := viper.GetInt("consulport")
-
+		dbpath = viper.GetString("dbpath")
+		dbpath = path.Join(dbpath, "cloud.db")
+		if _, err := os.Stat(dbpath); err != nil {
+			cmd.PrintErrln(err)
+			os.Exit(1)
+		}
+		service.InitSQLit(dbpath)
 		server.LauchCloudServer(httpPort)
 		if consulPort != 0 {
 			consulConfig := api.DefaultConfig()
@@ -53,6 +62,8 @@ func init() {
 	// httpserviceCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	cloudserviceCmd.Flags().IntVar(&cloudPort, "cloudport", 8060, "Cloud Service HTTP port")
 	cloudserviceCmd.Flags().IntVar(&consulPort, "consulport", 8500, "Consul port")
+	cloudserviceCmd.Flags().StringVar(&dbpath, "dbpath", "", "path of db data")
+	viper.BindPFlag("dbpath", migrationCmd.Flags().Lookup("dbpath"))
 	viper.BindPFlag("cloudport", cloudserviceCmd.Flags().Lookup("httpport"))
 	viper.BindPFlag("consulport", cloudserviceCmd.Flags().Lookup("consulport"))
 }

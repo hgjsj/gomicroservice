@@ -10,10 +10,6 @@ import (
 
 var db *gorm.DB
 
-func init() {
-	InitSQLit("cloud.db")
-}
-
 func DBMigrationAll() {
 	//migrate DB schema as need
 	db.AutoMigrate(&model.Disk{}, &model.VirtualMachine{})
