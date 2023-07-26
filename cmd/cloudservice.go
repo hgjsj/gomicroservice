@@ -32,6 +32,7 @@ var cloudserviceCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		service.InitSQLit(dbpath)
+		service.DBMigrationAll()
 		server.LauchCloudServer(httpPort)
 		if consulPort != 0 {
 			consulConfig := api.DefaultConfig()
