@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/viper"
 	"go-microservice/server"
 	"go-microservice/service"
-	"os"
 	"path"
 )
 
@@ -27,10 +26,6 @@ var cloudserviceCmd = &cobra.Command{
 		consulPort := viper.GetInt("consulport")
 		dbpath = viper.GetString("dbpath")
 		dbpath = path.Join(dbpath, "cloud.db")
-		if _, err := os.Stat(dbpath); err != nil {
-			cmd.PrintErrln(err)
-			os.Exit(1)
-		}
 		service.InitSQLit(dbpath)
 		service.DBMigrationAll()
 		server.LauchCloudServer(httpPort)
