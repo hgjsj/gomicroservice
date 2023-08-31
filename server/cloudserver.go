@@ -19,14 +19,15 @@ func LauchCloudServer(port int) {
 		newTokenFunc := endpoint.MakeTokenEndpoint()
 		validateTokenFunc := endpoint.MakeValidateTokenEndpoint()
 		if _, err := os.Stat(socketPath); err == nil{
-			jwts, err := service.NewSpiffeJWTSource(context.Background(), socketPath)
+			ctx := context.Background()
+			jwts, err := service.NewSpiffeJWTSource(ctx, socketPath)
 			if err == nil {
 				fmt.Printf("unable to create JWTSource: %s", err.Error())
 				return
 			} 
-			validateTokenFunc = endpoint.MakeValidateSpiffeJWTEndpoint(context.Background(), jwts, []string{serverSpiffeID})
-			newTokenFunc = endpoint.MakeSpiffeJWTEndpoint(context.Background(), jwts, serverSpiffeID)
-			defer jwts.Close()
+			validateTokenFunc = endpoint.MakeValidateSpiffeJWTEndpoint(ctx, jwts, []string{serverSpiffeID})
+			newTokenFunc = endpoint.MakeSpiffeJWTEndpoint(ctx, jwts, serverSpiffeID)
+			//defer jwts.Close()
 		}
 		//Proceed VM router
 		router.POST("/token", newTokenFunc)

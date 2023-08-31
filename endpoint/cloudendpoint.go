@@ -199,18 +199,18 @@ func MakeValidateTokenEndpoint() gin.HandlerFunc {
 }
 
 
-func MakeSpiffeJWTEndpoint(ctx context.Context, jwts service.SpiffeJwtSource, spiffeID string) gin.HandlerFunc {
+func MakeSpiffeJWTEndpoint(ctx context.Context, jwts *service.SpiffeJwtSource, spiffeID string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if token, err := jwts.NewSpiffeJWT(ctx, spiffeID); err == nil {
 			c.Header("X-Subject-Token", token)
 			c.JSON(http.StatusOK, nil)
 		} else {
-			c.JSON(http.StatusInternalServerError, nil)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
 }
 
-func MakeValidateSpiffeJWTEndpoint(ctx context.Context, jwts service.SpiffeJwtSource, audiences []string) gin.HandlerFunc {
+func MakeValidateSpiffeJWTEndpoint(ctx context.Context, jwts *service.SpiffeJwtSource, audiences []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
 		if token == "" {

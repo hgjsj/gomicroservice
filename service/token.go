@@ -46,13 +46,16 @@ type  SpiffeJwtSource struct {
 	jwts	*workloadapi.JWTSource
 }
 
-func NewSpiffeJWTSource(ctx context.Context,  socketPath string) (SpiffeJwtSource, error){
+var spiffeJwtSource = new(SpiffeJwtSource)
+
+func NewSpiffeJWTSource(ctx context.Context,  socketPath string) (*SpiffeJwtSource, error){
 	clientOptions := workloadapi.WithClientOptions(workloadapi.WithAddr(socketPath))
 	jwtSource, err := workloadapi.NewJWTSource(ctx, clientOptions)
 	if err != nil {
-		return SpiffeJwtSource{}, fmt.Errorf("unable to create JWTSource: %s", err.Error())
+		return nil, fmt.Errorf("unable to create JWTSource: %s", err.Error())
 	} 
-	return SpiffeJwtSource{jwts: jwtSource}, nil
+	spiffeJwtSource.jwts = jwtSource
+	return spiffeJwtSource, nil
 }
 
 func (j SpiffeJwtSource)NewSpiffeJWT(ctx context.Context,  spiffeID string) (string, error){
