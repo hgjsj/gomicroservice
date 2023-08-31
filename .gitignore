@@ -4,3 +4,4 @@
 /*.exe
 /*.db
 /go-microservice
+/__debug_bin*
