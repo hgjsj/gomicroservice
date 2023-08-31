@@ -1,12 +1,13 @@
 package endpoint
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
 	"go-microservice/model"
 	"go-microservice/service"
 	"net/http"
 	"regexp"
 	"strconv"
+	"github.com/gin-gonic/gin"
 )
 
 func MakeVMPostEndpoint() gin.HandlerFunc {
@@ -192,6 +193,39 @@ func MakeValidateTokenEndpoint() gin.HandlerFunc {
 
 			if isValid, err := service.ValidateToken(jwt[len(jwt)-1]); !isValid {
 				c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+			}
+		}
+	}
+}
+
+
+func MakeSpiffeJWTEndpoint(ctx context.Context, jwts service.SpiffeJwtSource, spiffeID string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if token, err := jwts.NewSpiffeJWT(ctx, spiffeID); err == nil {
+			c.Header("X-Subject-Token", token)
+			c.JSON(http.StatusOK, nil)
+		} else {
+			c.JSON(http.StatusInternalServerError, nil)
+		}
+	}
+}
+
+func MakeValidateSpiffeJWTEndpoint(ctx context.Context, jwts service.SpiffeJwtSource, audiences []string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.GetHeader("Authorization")
+		if token == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": "Need token in header"})
+		} else {
+			reg, _ := regexp.Compile("Bearer\\s+(.*?)$")
+			jwt := reg.FindStringSubmatch(token)
+			if len(jwt) == 0 {
+				c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": "incorrectly formatted authorization header"})
+			}
+			token = jwt[len(jwt)-1]
+
+			_, err := jwts.ValidateSpiffeJWT(ctx, token,audiences)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error":  err.Error()})
 			}
 		}
 	}

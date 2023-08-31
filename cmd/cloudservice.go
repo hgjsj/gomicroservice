@@ -24,7 +24,11 @@ var cloudserviceCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		httpPort := viper.GetInt("cloudport")
 		consulPort := viper.GetInt("consulport")
-		dbpath = viper.GetString("dbpath")
+		var err error
+		if dbpath, err = cmd.Flags().GetString("dbpath"); err != nil || dbpath == ""{
+			dbpath = viper.GetString("dbpath")
+		}
+		
 		dbpath = path.Join(dbpath, "cloud.db")
 		service.InitSQLit(dbpath)
 		service.DBMigrationAll()
@@ -58,7 +62,7 @@ func init() {
 	// httpserviceCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	cloudserviceCmd.Flags().IntVar(&cloudPort, "cloudport", 8060, "Cloud Service HTTP port")
 	cloudserviceCmd.Flags().IntVar(&consulPort, "consulport", 8500, "Consul port")
-	cloudserviceCmd.Flags().StringVar(&dbpath, "dbpath", ".", "path of db data")
+	cloudserviceCmd.Flags().StringVar(&dbpath, "dbpath", "", "path of db data")
 	viper.BindPFlag("dbpath", migrationCmd.Flags().Lookup("dbpath"))
 	viper.BindPFlag("cloudport", cloudserviceCmd.Flags().Lookup("httpport"))
 	viper.BindPFlag("consulport", cloudserviceCmd.Flags().Lookup("consulport"))
