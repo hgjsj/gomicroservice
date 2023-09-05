@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
 )
@@ -59,7 +60,8 @@ func NewSpiffeJWTSource(ctx context.Context,  socketPath string) (*SpiffeJwtSour
 }
 
 func (j SpiffeJwtSource)NewSpiffeJWT(ctx context.Context,  spiffeID string) (string, error){
-	if token, err := j.jwts.FetchJWTSVID(ctx, jwtsvid.Params{Audience: spiffeID,}); err == nil {
+	sid, _ := spiffeid.FromString(spiffeID)
+	if token, err := j.jwts.FetchJWTSVID(ctx, jwtsvid.Params{Audience: spiffeID, Subject: sid}); err == nil {
 		return token.Marshal(), nil
 	} else {
 		return "", fmt.Errorf("unable to fetch JWT: %s", err.Error())
@@ -68,6 +70,10 @@ func (j SpiffeJwtSource)NewSpiffeJWT(ctx context.Context,  spiffeID string) (str
 
 func (j SpiffeJwtSource)ValidateSpiffeJWT(ctx context.Context,  token string, audiences []string) (*jwtsvid.SVID, error){
 	if svid, err := jwtsvid.ParseAndValidate(token, j.jwts, audiences); err == nil {
+		
+		fmt.Println(svid.ID.String())
+		fmt.Println(svid.Expiry.String())
+		fmt.Println(svid.Claims)
 		return svid, nil
 	} else {
 		return nil, fmt.Errorf("unable to fetch JWT: %s", err.Error())
