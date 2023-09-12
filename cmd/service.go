@@ -5,6 +5,10 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"os"
+	"os/signal"
+	"syscall"
+	"fmt"
 )
 
 // serviceCmd represents the service command
@@ -13,9 +17,9 @@ var serviceCmd = &cobra.Command{
 	Short: "Launch micro service",
 	Long:  `Launch micro service`,
 	// Run: func(cmd *cobra.Command, args []string) {
-	// 	cmd.Help()
-	// 	os.Exit(1)
+	//  	cmd.Help()
 	// },
+
 }
 
 func init() {
@@ -30,4 +34,14 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// serviceCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func waitservicedone(cmd *cobra.Command, args []string) {
+	errs := make(chan error)
+	c := make(chan os.Signal)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		errs <- fmt.Errorf("%s", <-c)
+	}()
+	fmt.Printf("exit %p", <-errs)
 }

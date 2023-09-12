@@ -12,6 +12,8 @@ import (
 	"go-microservice/server"
 	"go-microservice/service"
 	"path"
+
+
 )
 
 var cloudPort int
@@ -46,6 +48,7 @@ var cloudserviceCmd = &cobra.Command{
 				Port:    consulPort})
 		}
 	},
+	PostRun: waitservicedone,
 }
 
 func init() {

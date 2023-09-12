@@ -4,11 +4,7 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -30,15 +26,15 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
-	if len(os.Args) > 1 && os.Args[1] == "service" {
-		errs := make(chan error)
-		c := make(chan os.Signal)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		go func() {
-			errs <- fmt.Errorf("%s", <-c)
-		}()
-		fmt.Print("exit %p", <-errs)
-	}
+	// if len(os.Args) > 1 && os.Args[1] == "service" {
+	// 	errs := make(chan error)
+	// 	c := make(chan os.Signal)
+	// 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+	// 	go func() {
+	// 		errs <- fmt.Errorf("%s", <-c)
+	// 	}()
+	// 	fmt.Print("exit %p", <-errs)
+	// }
 }
 
 func init() {
