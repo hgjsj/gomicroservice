@@ -48,7 +48,7 @@ var cloudserviceCmd = &cobra.Command{
 				Port:    consulPort})
 		}
 	},
-	PostRun: waitservicedone,
+	PostRun: waitServerDone,
 }
 
 func init() {

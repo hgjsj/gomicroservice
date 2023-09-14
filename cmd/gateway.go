@@ -27,7 +27,7 @@ var gatewayCmd = &cobra.Command{
 
 		server.LaunchGW(httpGWPort, consulPort)
 	},
-	PostRun: waitservicedone,
+	PostRun: waitServerDone,
 }
 
 func init() {

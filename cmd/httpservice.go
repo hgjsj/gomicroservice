@@ -42,7 +42,7 @@ var httpserviceCmd = &cobra.Command{
 				Port:    consulPort})
 		}
 	},
-	PostRun: waitservicedone,
+	PostRun: waitServerDone,
 }
 
 func init() {

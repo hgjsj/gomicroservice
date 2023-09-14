@@ -4,11 +4,11 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"os"
+	"fmt"
 	"os/signal"
 	"syscall"
-	"fmt"
+	"github.com/spf13/cobra"
 )
 
 // serviceCmd represents the service command
@@ -36,12 +36,10 @@ func init() {
 	// serviceCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func waitservicedone(cmd *cobra.Command, args []string) {
-	errs := make(chan error)
-	c := make(chan os.Signal)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		errs <- fmt.Errorf("%s", <-c)
-	}()
-	fmt.Printf("exit %p", <-errs)
+func waitServerDone(cmd *cobra.Command, args []string){
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	fmt.Println("Shutdown Server ...")
 }
+

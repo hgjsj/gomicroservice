@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"go-microservice/endpoint"
 	"go-microservice/service"
+	"log"
+	"net/http"
 	"os"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,33 +16,38 @@ const serverSpiffeID = "spiffe://example.org/gomicroservice/cloud"
 
 func LauchCloudServer(port int) {
 	router := gin.Default()
+
+	newTokenFunc := endpoint.MakeTokenEndpoint()
+	validateTokenFunc := endpoint.MakeValidateTokenEndpoint()
+	if _, err := os.Stat(socketPath); err == nil{
+		ctx := context.Background()
+		jwts, err := service.NewSpiffeJWTSource(ctx, fmt.Sprintf("unix://%s",socketPath))
+		if err != nil {
+			fmt.Printf("unable to create JWTSource: %s", err.Error())
+			return
+		} 
+		validateTokenFunc = endpoint.MakeValidateSpiffeJWTEndpoint(ctx, jwts, []string{serverSpiffeID})
+		newTokenFunc = endpoint.MakeSpiffeJWTEndpoint(ctx, jwts, serverSpiffeID)
+		defer jwts.Close()
+	}
+	//Proceed VM router
+	router.POST("/token", newTokenFunc)
+	router.POST("/vm", validateTokenFunc, endpoint.MakeVMPostEndpoint())
+	router.POST("/disk", validateTokenFunc, endpoint.MakeDiskPostEndpoint())
+	router.GET("/disk/:id", validateTokenFunc, endpoint.MakeDiskGetEndpoint())
+	router.GET("/vm/:id", validateTokenFunc, endpoint.MakeVMGetEndpoint())
+	router.GET("/vm", validateTokenFunc, endpoint.MakeListVMEndpoint())
+	router.GET("/disk", validateTokenFunc, endpoint.MakeListDiskEndpoint())
+	router.PATCH("/disk/:id", validateTokenFunc, endpoint.MakePatchDiskEndpoint())
+	router.PATCH("/vm/:id", validateTokenFunc, endpoint.MakePatchVMEndpoint())
+	router.DELETE("/disk/:id", validateTokenFunc, endpoint.MakeDeleteDiskEndpoint())
+	router.DELETE("/vm/:id", validateTokenFunc, endpoint.MakeDeleteVMEndpoint())
+	listen := fmt.Sprintf(":%d", port)
 	go func() {
-		newTokenFunc := endpoint.MakeTokenEndpoint()
-		validateTokenFunc := endpoint.MakeValidateTokenEndpoint()
-		if _, err := os.Stat(socketPath); err == nil{
-			ctx := context.Background()
-			jwts, err := service.NewSpiffeJWTSource(ctx, fmt.Sprintf("unix://%s",socketPath))
-			if err != nil {
-				fmt.Printf("unable to create JWTSource: %s", err.Error())
-				return
-			} 
-			validateTokenFunc = endpoint.MakeValidateSpiffeJWTEndpoint(ctx, jwts, []string{serverSpiffeID})
-			newTokenFunc = endpoint.MakeSpiffeJWTEndpoint(ctx, jwts, serverSpiffeID)
-			defer jwts.Close()
+		// service connections
+		if err := router.Run(listen); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
 		}
-		//Proceed VM router
-		router.POST("/token", newTokenFunc)
-		router.POST("/vm", validateTokenFunc, endpoint.MakeVMPostEndpoint())
-		router.POST("/disk", validateTokenFunc, endpoint.MakeDiskPostEndpoint())
-		router.GET("/disk/:id", validateTokenFunc, endpoint.MakeDiskGetEndpoint())
-		router.GET("/vm/:id", validateTokenFunc, endpoint.MakeVMGetEndpoint())
-		router.GET("/vm", validateTokenFunc, endpoint.MakeListVMEndpoint())
-		router.GET("/disk", validateTokenFunc, endpoint.MakeListDiskEndpoint())
-		router.PATCH("/disk/:id", validateTokenFunc, endpoint.MakePatchDiskEndpoint())
-		router.PATCH("/vm/:id", validateTokenFunc, endpoint.MakePatchVMEndpoint())
-		router.DELETE("/disk/:id", validateTokenFunc, endpoint.MakeDeleteDiskEndpoint())
-		router.DELETE("/vm/:id", validateTokenFunc, endpoint.MakeDeleteVMEndpoint())
-		listen := fmt.Sprintf(":%d", port)
-		router.Run(listen)
 	}()
+
 }

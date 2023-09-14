@@ -23,7 +23,7 @@ var grpcserviceCmd = &cobra.Command{
 		gRPCPort, _ = strconv.Atoi(grpcFlag.Value.String())
 		server.LaunchgRPCSever(gRPCPort)
 	},
-	PostRun: waitservicedone,
+	PostRun: waitServerDone,
 }
 
 func init() {
