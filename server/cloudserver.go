@@ -8,15 +8,23 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
+	"strings"
 	"github.com/gin-gonic/gin"
 )
 
 const socketPath = "/run/spire/sockets/agent.sock"
 const serverSpiffeID = "spiffe://example.org/gomicroservice/cloud"
 
-func LauchCloudServer(port int) {
-	router := gin.Default()
+func logFormat(param gin.LogFormatterParams) string{
+	return fmt.Sprintf("[%s] %s %s %s %d %s %s\n", param.TimeStamp.Format(time.RFC3339),
+	param.ClientIP, param.Method, param.Path, param.StatusCode, param.Request.UserAgent(), strings.TrimSuffix(param.ErrorMessage, "\n"), )
+}
 
+func LauchCloudServer(port int) {
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	router.Use(gin.LoggerWithFormatter(logFormat))
 	newTokenFunc := endpoint.MakeTokenEndpoint()
 	validateTokenFunc := endpoint.MakeValidateTokenEndpoint()
 	if _, err := os.Stat(socketPath); err == nil{
@@ -43,6 +51,7 @@ func LauchCloudServer(port int) {
 	router.DELETE("/disk/:id", validateTokenFunc, endpoint.MakeDeleteDiskEndpoint())
 	router.DELETE("/vm/:id", validateTokenFunc, endpoint.MakeDeleteVMEndpoint())
 	listen := fmt.Sprintf(":%d", port)
+	fmt.Printf("[%s] Listening and serving HTTP on %d\n", time.Now().Format(time.RFC3339), port)
 	go func() {
 		// service connections
 		if err := router.Run(listen); err != nil && err != http.ErrServerClosed {

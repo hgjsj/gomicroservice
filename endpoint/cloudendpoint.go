@@ -2,25 +2,30 @@ package endpoint
 
 import (
 	"context"
+	"fmt"
 	"go-microservice/model"
 	"go-microservice/service"
 	"net/http"
 	"regexp"
 	"strconv"
+
 	"github.com/gin-gonic/gin"
 )
 
 func MakeVMPostEndpoint() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		
 		vm := model.VirtualMachine{}
 		gin.Logger()
 		if err := c.BindJSON(&vm); err == nil {
 			if err = service.Create(&vm); err == nil {
 				c.JSON(http.StatusOK, vm)
 			} else {
+				c.Error(err)
 				c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			}
 		} else {
+			c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
@@ -34,9 +39,11 @@ func MakeDiskPostEndpoint() gin.HandlerFunc {
 			if err = service.Create(&disk); err == nil {
 				c.JSON(http.StatusOK, disk)
 			} else {
+				c.Error(err)
 				c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			}
 		} else {
+			c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
@@ -51,6 +58,7 @@ func MakeVMGetEndpoint() gin.HandlerFunc {
 		if err := service.Get(&vm); err == nil {
 			c.JSON(http.StatusOK, vm)
 		} else {
+			c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
@@ -65,6 +73,7 @@ func MakeDiskGetEndpoint() gin.HandlerFunc {
 		if err := service.Get(&disk); err == nil {
 			c.JSON(http.StatusOK, disk)
 		} else {
+			c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 
@@ -77,6 +86,7 @@ func MakeListVMEndpoint() gin.HandlerFunc {
 		if err == nil {
 			c.JSON(http.StatusOK, vms)
 		} else {
+			c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 
@@ -89,6 +99,7 @@ func MakeListDiskEndpoint() gin.HandlerFunc {
 		if err == nil {
 			c.JSON(http.StatusOK, disks)
 		} else {
+			c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 
@@ -108,10 +119,12 @@ func MakePatchDiskEndpoint() gin.HandlerFunc {
 				c.JSON(http.StatusOK, disk)
 
 			} else {
+				c.Error(err)
 				c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			}
 
 		} else {
+			c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
@@ -129,10 +142,12 @@ func MakePatchVMEndpoint() gin.HandlerFunc {
 				c.JSON(http.StatusOK, vm)
 
 			} else {
+				c.Error(err)
 				c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			}
 
 		} else {
+			c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
@@ -147,6 +162,7 @@ func MakeDeleteDiskEndpoint() gin.HandlerFunc {
 		if err := service.Delete(&disk); err == nil {
 			c.JSON(http.StatusOK, disk)
 		} else {
+			c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
@@ -161,6 +177,7 @@ func MakeDeleteVMEndpoint() gin.HandlerFunc {
 		if err := service.Delete(&vm); err == nil {
 			c.JSON(http.StatusOK, vm)
 		} else {
+			c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 
@@ -183,15 +200,18 @@ func MakeValidateTokenEndpoint() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
 		if token == "" {
+			c.Error(fmt.Errorf("Need token in header"))
 			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": "Need token in header"})
 		} else {
 			reg, _ := regexp.Compile("Bearer\\s+(.*?)$")
 			jwt := reg.FindStringSubmatch(token)
 			if len(jwt) == 0 {
+				c.Error(fmt.Errorf("incorrectly formatted authorization header"))
 				c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": "incorrectly formatted authorization header"})
 			}
 
 			if isValid, err := service.ValidateToken(jwt[len(jwt)-1]); !isValid {
+				c.Error(err)
 				c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 			}
 		}
@@ -205,6 +225,7 @@ func MakeSpiffeJWTEndpoint(ctx context.Context, jwts *service.SpiffeJwtSource, s
 			c.Header("X-Subject-Token", token)
 			c.JSON(http.StatusOK, nil)
 		} else {
+			c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
@@ -214,17 +235,20 @@ func MakeValidateSpiffeJWTEndpoint(ctx context.Context, jwts *service.SpiffeJwtS
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
 		if token == "" {
+			c.Error(fmt.Errorf("Need token in header"))
 			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": "Need token in header"})
 		} else {
 			reg, _ := regexp.Compile("Bearer\\s+(.*?)$")
 			jwt := reg.FindStringSubmatch(token)
 			if len(jwt) == 0 {
+				c.Error(fmt.Errorf("incorrectly formatted authorization header"))
 				c.AbortWithStatusJSON(http.StatusBadRequest, map[string]string{"error": "incorrectly formatted authorization header"})
 			}
 			token = jwt[len(jwt)-1]
 
 			_, err := jwts.ValidateSpiffeJWT(ctx, token,audiences)
 			if err != nil {
+				c.Error(err)
 				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error":  err.Error()})
 			}
 		}
