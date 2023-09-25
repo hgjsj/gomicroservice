@@ -7,17 +7,31 @@ pipeline {
   tools { go '1.20' }
 
   parameters {
-      string(name: 'version', defaultValue: '', description: 'version of code', trim: true)
+      string(name: 'version', defaultValue: '1.0', description: 'version of code', trim: true)
   }
   stages {
-    stage('Clone project to local'){
-
-    }
-
-    stage('Build') {
+    stage('Checkout project from git'){
       steps {
-        // Output will be something like "go version go1.19 darwin/arm64"
-        sh 'go version'
+      sh 'rm -rf gomicroservice'
+      sh 'git clone https://gitee.com/hgjsj01/gomicroservice.git'
+      }
+    }
+    stage('Build executable') {
+      steps {
+        dir("${env.WORKSPACE}/gomicroservice"){
+          sh '''
+              go env -w GO111MODULE=on
+              go env -w GOPROXY=https://mirrors.aliyun.com/goproxy/,direct
+              go build
+            '''
+          script {
+            if (fileExists('go-microservice')) {
+                echo "File go-microservice found!"
+            } else {
+              echo "File go-microservice not found!"
+            }
+          }
+        }
       }
     }
   }
