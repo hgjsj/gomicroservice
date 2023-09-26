@@ -16,7 +16,7 @@ pipeline {
       sh 'git clone https://gitee.com/hgjsj01/gomicroservice.git'
       }
     }
-    stage('Build executable') {
+    stage('Build go executable') {
       steps {
         dir("${env.WORKSPACE}/gomicroservice"){
           sh '''
@@ -26,11 +26,26 @@ pipeline {
             '''
           script {
             if (fileExists('go-microservice')) {
-                echo "File go-microservice found!"
+              echo "File go-microservice found!"
             } else {
-              echo "File go-microservice not found!"
+              error("File go-microservice not found!")
             }
           }
+        }
+      }
+    }
+
+    stage('Transfer go binary to building machine'){
+      steps {
+        script {
+            def remote = [:]
+            remote.name = '30.129'
+            remote.host = '192.168.30.129'
+            remote.user = 'root'
+            remote.password = '86782943'
+            remote.allowAnyHosts = true
+      
+            sshPut remote: remote, from: "${env.WORKSPACE}/gomicroservice/go-microservice", into: '/opt/gomicroservice/'
         }
       }
     }
