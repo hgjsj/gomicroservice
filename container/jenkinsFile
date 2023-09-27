@@ -35,7 +35,7 @@ pipeline {
       }
     }
 
-    stage('Transfer go binary to building machine'){
+    stage('Transfer binary to building machine and build image'){
       steps {
         script {
             def remote = [:]
@@ -44,8 +44,12 @@ pipeline {
             remote.user = 'root'
             remote.password = '86782943'
             remote.allowAnyHosts = true
-      
-            sshPut remote: remote, from: "${env.WORKSPACE}/gomicroservice/go-microservice", into: '/opt/gomicroservice/'
+            sshCommand remote: remote, failOnError: true, command: "mkdir /opt/gomicroservice_build"
+            sshPut remote: remote, failOnError: true, from: "${env.WORKSPACE}/gomicroservice/go-microservice", into: '/opt/gomicroservice_build/'
+            sshPut remote: remote, failOnError: true, from: "${env.WORKSPACE}/gomicroservice/go-service.yml", into: '/opt/gomicroservice_build/'
+            sshPut remote: remote, failOnError: true, from: "${env.WORKSPACE}/gomicroservice/container/Dockerfile", into: '/opt/gomicroservice_build/'
+            sshCommand remote: remote, failOnError: true, command: "cd /opt/gomicroservice_build; podman build -t go-microservice:${version} -f ./ .; podman save -o  go-microservice-${version}.tar go-microservice:${version}; ctr i import go-microservice-${version}.tar"
+            sshRemove  remote: remote, failOnError: true, path: '/opt/gomicroservice_build'
         }
       }
     }
